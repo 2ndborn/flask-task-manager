@@ -21,7 +21,7 @@ mongo = PyMongo(app)
 @app.route("/")
 @app.route("/get_tasks")
 def get_tasks():
-    tasks = list(mongo.db.tasks.find())
+    tasks = mongo.db.tasks.find()
     return render_template("tasks.html", tasks=tasks)
 
 
@@ -40,7 +40,7 @@ def register():
             "username": request.form.get("username").lower(),
             "password": generate_password_hash(request.form.get("password"))
         }
-        mongo.db.user.insert_one(register)
+        mongo.db.users.insert_one(register)
 
         # put the new user into 'session' cookie
         session["user"] = request.form.get("username").lower()
@@ -50,25 +50,26 @@ def register():
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
-    # check if username exists in db
-    existing_user = mongo.db.users.find_one(
-        {"username": request.form.get("username").lower()})
+    if request.method == "POST":
+        # check if username exists in db
+        existing_user = mongo.db.users.find_one(
+            {"username": request.form.get("username").lower()})
 
-    if existing_user:
-        # ensure hashed password mathces user input
-        if check_password_hash(
-            existing_user["password"], request.form.get("password")):
-            session["user"] = request.form.get("username").lower()
-            flash("welcome, {}".format(request.form.get("username")))
+        if existing_user:
+            # ensure hashed password matches user input
+            if check_password_hash(
+                    existing_user["password"], request.form.get("password")):
+                session["user"] = request.form.get("username").lower()
+                flash("Welcome, {}".format(request.form.get("username")))
+            else:
+                # invalid password match
+                flash("Incorrect Username and/or Password")
+                return redirect(url_for("login"))
+
         else:
-            # invalid password match
+            # username doesn't exist
             flash("Incorrect Username and/or Password")
             return redirect(url_for("login"))
-
-    else:
-        # username doesn't exist
-        flash("Incorrect Username and/or Password")
-        return redirect(url_for("login"))
 
     return render_template("login.html")
 
