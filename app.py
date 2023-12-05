@@ -172,7 +172,7 @@ def edit_category(category_id):
             "category_name": request.form.get("category_name")
         }
         mongo.db.categories.update_one(
-            "_id", ObjectId(category_id), {"$set": submit})
+            {"_id": ObjectId(category_id)}, {"$set": submit})
         flash("Category Successfully Updated")
         return redirect(url_for("get_categories"))
 
